@@ -6,6 +6,7 @@
 from parlai.core.worlds import validate, create_task
 from parlai.mturk.core.worlds import MTurkTaskWorld, MTurkOnboardWorld
 
+NUM_DIALOG_ROUNDS = 10
 
 class ModelEvaluatorOnboardWorld(MTurkOnboardWorld):
     def parley(self):
@@ -29,6 +30,7 @@ class ModelEvaluatorWorld(MTurkTaskWorld):
         self.task_world = create_task(task_opt, model_agent)
         self.mturk_agent = mturk_agent
         self.episodeDone = False
+        self.round_id = 0
 
     def parley(self):
         self.task_world.parley()
@@ -37,19 +39,25 @@ class ModelEvaluatorWorld(MTurkTaskWorld):
         # Show the dialog model's response to the context, and ask the turker
         # to rate the response
         ad['id'] = self.__class__.evaluator_agent_id
-        ad['text'] = (
-            self.task_world.get_acts()[0]['text'] + "\n\n" +
-            "How would you rate the following response (from 0 to 10):\n\n" +
-            self.task_world.get_acts()[1]['text'])
 
-        # TODO: deal with multi-turn dialogs, for now we will just deal
-        # with 1-turn dialogs in this task.
-        ad['episode_done'] = True  # self.world.episode_done()
+        # Show a random answer after each round of dialog
+        ad['text'] = ("Answer {0}".format(self.round_id))
 
+        global NUM_DIALOG_ROUNDS
+
+        if (self.round_id == NUM_DIALOG_ROUNDS):
+            ad['episode_done'] = True  # self.world.episode_done()
+            self.episodeDone = True
+        else:
+            ad['episode_done'] = False  # self.world.episode_done()
+            self.round_id += 1
+
+        self.mturk_agent.observe(validate(ad))
+
+        ad['text'] = ("Please ask the next question based on previous context.")
         self.mturk_agent.observe(validate(ad))
         self.rating = self.mturk_agent.act()
         # Can log the rating here
-        self.episodeDone = True
 
     def episode_done(self):
         return self.episodeDone
