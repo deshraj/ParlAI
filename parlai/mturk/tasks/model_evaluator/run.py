@@ -10,7 +10,11 @@ from parlai.mturk.core.mturk_manager import MTurkManager
 from task_config import task_config
 import os
 
-
+'''
+IrBaselineAgent: The model that we want to evaluate
+Act(): It lets the agent/human in the world to act
+Observe(): Observe is the time when the agent/human has to wait for a while
+'''
 def main():
     argparser = ParlaiParser(False, False)
     argparser.add_parlai_data_path()
@@ -29,7 +33,10 @@ def main():
     task_opt['datapath'] = opt['datapath']
     task_opt['task'] = '#MovieDD-Reddit'
 
+    # Define the MTurk Agent (Note that we are not supposed to change the AgentId otherwise things will break)
     mturk_agent_id = 'Worker'
+    # MTurkManager class manages the interaction between the Mturk agents as well as direct interactions between a
+    # world and a MTurk server
     mturk_manager = MTurkManager(
         opt=opt,
         mturk_agent_ids=[mturk_agent_id]
